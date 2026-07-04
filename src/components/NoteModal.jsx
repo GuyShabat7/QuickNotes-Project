@@ -19,6 +19,7 @@ function NoteModal({ note, onClose, onUpdateNote }) {
             key={note.id}
             initialTitle={note.title}
             initialText={note.text}
+            initialCategory={note.category}
             submitLabel="Save"
             onSubmit={(fields) => onUpdateNote(note.id, fields)}
           />

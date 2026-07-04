@@ -1,4 +1,5 @@
 import { formatDate } from '../utils/date'
+import { getCategoryColor } from '../utils/categories'
 
 function NoteList({ notes, onDeleteNote, onSelectNote }) {
   if (notes.length === 0) {
@@ -11,6 +12,7 @@ function NoteList({ notes, onDeleteNote, onSelectNote }) {
         <article
           key={note.id}
           className="note-card"
+          style={{ backgroundColor: getCategoryColor(note.category) }}
           onClick={() => onSelectNote(note)}
         >
           {note.title && <h3 className="note-card__title">{note.title}</h3>}

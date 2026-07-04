@@ -128,6 +128,22 @@
   box-shadow: 0 0 0 3px rgba(38, 128, 194, 0.2);
 }
 
+.note-form__category {
+  width: 100%;
+  padding: 10px 12px;
+  font: inherit;
+  border: 1px solid #bcccdc;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.note-form__category:focus {
+  outline: none;
+  border-color: #2680c2;
+  box-shadow: 0 0 0 3px rgba(38, 128, 194, 0.2);
+}
+
 .note-card__title {
   margin: 0;
   font-size: 1rem;

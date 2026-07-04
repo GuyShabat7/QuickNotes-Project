@@ -27,6 +27,12 @@ Updated as new functions are added in each step.
   - [Note modal with react-modal](#note-modal-with-react-modal)
 - [Step 6](#step-6)
   - [Editing a note (reusable form)](#editing-a-note-reusable-form)
+- [Step 7](#step-7)
+  - [Deploying to GitHub Pages](#deploying-to-github-pages)
+- [Step 8](#step-8)
+  - [Persisting notes to localStorage](#persisting-notes-to-localstorage)
+- [Step 9](#step-9)
+  - [Note categories with colors](#note-categories-with-colors)
 - [Function Index](#function-index)
 
 ---
@@ -788,18 +794,225 @@ Card now shows the new text + an "Edited: ..." date
 
 ---
 
+## Step 7
+
+Publishes the app as a live public site on **GitHub Pages** at
+`https://GuyShabat7.github.io/QuickNotes-Project/`.
+
+### Deploying to GitHub Pages
+
+GitHub Pages is free **static** hosting — it serves plain HTML/CSS/JS, it can't run React source. So the flow is: **build → publish the build → point Pages at it.**
+
+#### 1. `base` in `vite.config.js`
+
+```js
+export default defineConfig({
+  base: '/QuickNotes-Project/',
+  plugins: [react()],
+})
+```
+
+- A **project** Pages site is served from a subpath (`/QuickNotes-Project/`), not the domain root.
+- `base` makes Vite prefix every asset URL with that subpath. Without it, the built `index.html` would request `/assets/…` (domain root), which 404s → the infamous **blank white page**.
+- It must exactly match the repository name.
+
+#### 2. The `gh-pages` package + scripts (`package.json`)
+
+```json
+"homepage": "https://GuyShabat7.github.io/QuickNotes-Project/",
+"scripts": {
+  "predeploy": "npm run build",
+  "deploy": "gh-pages -d dist"
+}
+```
+
+- `gh-pages` (a dev dependency) takes a folder and pushes its contents to a branch called **`gh-pages`** on `origin`.
+- `deploy` publishes the `dist/` folder; `predeploy` runs **automatically before** it (npm's `pre<script>` convention), so `dist/` is always freshly built.
+- `homepage` documents the live URL.
+
+#### 3. Publish
+
+```
+git add -A && git commit -m "QuickNotes app"
+git push -u origin main      # source code lives on main
+npm run deploy               # built site is pushed to the gh-pages branch
+```
+
+- After `npm run deploy`, the repo has two branches: **`main`** (source) and **`gh-pages`** (the built static site). They are intentionally separate.
+
+#### 4. Enable Pages (one time, in the GitHub web UI)
+
+- **Settings → Pages → Build and deployment**
+- **Source:** Deploy from a branch
+- **Branch:** `gh-pages` / `(root)` → the site goes live in ~1 minute.
+
+#### Redeploying later
+
+Any time you change the app:
+
+```
+npm run deploy
+```
+
+That rebuilds and republishes to `gh-pages`. (Optionally also push source changes to `main`.)
+
+---
+
+## Step 8
+
+Makes the notes **persist between page reloads** by saving them to the browser's `localStorage`.
+
+### Persisting notes to localStorage
+
+React state lives in memory and is wiped on every reload. `localStorage` is a small per-site storage box in the browser that **survives reloads, tab closes, and restarts**. Two small changes in `App.jsx` connect the two.
+
+#### Load on startup (lazy initial state)
+
+```jsx
+const [notes, setNotes] = useState(() => {
+  const saved = localStorage.getItem('notes')
+  return saved ? JSON.parse(saved) : []
+})
+```
+
+- **`useState(() => ...)`** — passing a **function** instead of a value makes it a *lazy initializer*: React runs it **only once**, on the first render, to compute the starting state. (If we wrote `useState(JSON.parse(...))` directly it would run on every render — wasteful.)
+- `localStorage.getItem('notes')` — reads the saved string under the key `'notes'`. Returns `null` if nothing was ever saved.
+- `saved ? JSON.parse(saved) : []` — if there's saved data, `JSON.parse` turns the stored **string** back into the notes **array**; otherwise start empty. `localStorage` can only hold strings, which is why we parse.
+
+#### Save on every change
+
+```jsx
+useEffect(() => {
+  localStorage.setItem('notes', JSON.stringify(notes))
+}, [notes])
+```
+
+- **`useEffect(fn, [notes])`** runs after render and re-runs whenever `notes` changes.
+- `JSON.stringify(notes)` — converts the array of note objects into a string (the only thing `localStorage` accepts).
+- `localStorage.setItem('notes', ...)` — writes it under the key `'notes'`, overwriting the previous value.
+- Because **add, delete, and edit all call `setNotes`**, every one of them changes `notes` → this single effect re-saves automatically. No need to touch the individual handlers.
+
+#### Behavior notes
+
+- Storage is tied to the exact **origin** (site URL) and **browser/device** — the dev server, the live site, and different browsers each keep their own separate notes; it does **not** sync across devices (that needs a backend).
+- It persists until the user clears site data, or in Incognito/Private mode (cleared on close).
+
+Flow:
+
+```
+Reload page → useState initializer reads localStorage → notes restored
+      ▼
+Add / edit / delete → setNotes → notes changes → useEffect writes localStorage
+```
+
+---
+
+## Step 9
+
+Adds a **category** to each note (Personal, Work, …). The user picks one when creating or editing, and each category has a **predefined color** applied as the note's background.
+
+### Note categories with colors
+
+#### The categories source of truth (`src/utils/categories.js`)
+
+```jsx
+export const CATEGORIES = [
+  { value: 'personal', label: 'Personal', color: '#e0f2fe' },
+  { value: 'work', label: 'Work', color: '#ede9fe' },
+  { value: 'ideas', label: 'Ideas', color: '#dcfce7' },
+  { value: 'urgent', label: 'Urgent', color: '#fee2e2' },
+]
+
+export function getCategoryColor(value) {
+  const category = CATEGORIES.find((c) => c.value === value)
+  return category ? category.color : '#ffffff'
+}
+```
+
+- `CATEGORIES` — one array defining every category's stored `value`, display `label`, and `color`. Editing this array updates the dropdown *and* the colors everywhere — a single source of truth.
+- `getCategoryColor(value)` — `.find()` looks up the matching category; returns its color, or white as a fallback (e.g. old notes saved before categories existed have no `category`).
+
+#### The category `<select>` in `NoteForm`
+
+```jsx
+import { CATEGORIES } from '../utils/categories'
+
+function NoteForm({
+  ...
+  initialCategory = CATEGORIES[0].value,
+  ...
+}) {
+  const [category, setCategory] = useState(initialCategory)
+```
+
+```jsx
+<select
+  className="note-form__category"
+  value={category}
+  onChange={(event) => setCategory(event.target.value)}
+>
+  {CATEGORIES.map((c) => (
+    <option key={c.value} value={c.value}>
+      {c.label}
+    </option>
+  ))}
+</select>
+```
+
+- A third piece of controlled state, `category`, alongside title and text.
+- `initialCategory = CATEGORIES[0].value` — defaults to the first category, so a note **always** has a category (and therefore a color). When the modal passes `initialCategory={note.category}` and an old note has none (`undefined`), the default parameter kicks in.
+- `<select>` is a controlled dropdown: `value={category}` shows the current choice, `onChange` updates it. The `<option>`s are generated by mapping over `CATEGORIES`.
+- On submit, `category` is included in the payload (`onSubmit({ title, text, category })`) and reset to `initialCategory` afterward.
+
+#### Storing it (`src/App.jsx`)
+
+Both `handleAddNote` and `handleUpdateNote` now include `category`:
+
+```jsx
+// add
+const newNote = { id, title, text, category, createdAt }
+// update
+{ ...note, title, text, category, updatedAt }
+```
+
+#### Applying the color (`src/components/NoteList.jsx`)
+
+```jsx
+import { getCategoryColor } from '../utils/categories'
+
+<article
+  className="note-card"
+  style={{ backgroundColor: getCategoryColor(note.category) }}
+  ...
+>
+```
+
+- **`style={{ backgroundColor: ... }}`** — an **inline style** is used here because the color is *data-driven* (depends on the note's category value at runtime), which a fixed CSS class can't express. The double braces are `{` for "JS in JSX" plus `{` for the JS object.
+- `getCategoryColor(note.category)` returns the predefined color, which paints the whole card. The pastel tones keep the dark text readable.
+
+Flow:
+
+```
+Pick a category in the form → stored on the note (category field)
+      ▼
+NoteList reads note.category → getCategoryColor() → inline background color
+```
+
+---
+
 ## Function Index
 
 | Function | File | Purpose | Added in |
 |---|---|---|---|
-| `App()` | `src/App.jsx` | Root component; holds `notes` state and layout | Step 1 |
-| `handleAddNote({ title, text })` | `src/App.jsx` | Builds a note object (with optional title) and prepends it to state | Step 1 (title added Step 3) |
-| `NoteForm({ onSubmit, initialTitle, initialText, submitLabel })` | `src/components/NoteForm.jsx` | Reusable form for creating and editing notes | Step 1 (title Step 3, auto-resize Step 4, reusable Step 6) |
+| `App()` | `src/App.jsx` | Root component; holds `notes` state (persisted to localStorage) and layout | Step 1 (persistence Step 8) |
+| `handleAddNote({ title, text, category })` | `src/App.jsx` | Builds a note object (title, text, category) and prepends it to state | Step 1 (title Step 3, category Step 9) |
+| `NoteForm({ onSubmit, initialTitle, initialText, initialCategory, submitLabel })` | `src/components/NoteForm.jsx` | Reusable create/edit form with title, body, and category | Step 1 (title Step 3, auto-resize Step 4, reusable Step 6, category Step 9) |
 | `useEffect` resize block | `src/components/NoteForm.jsx` | Resizes the textarea to fit its content on every text change | Step 4 |
 | `handleSubmit(event)` | `src/components/NoteForm.jsx` | Validates text, calls `onSubmit({ title, text })`, clears fields | Step 1 (title Step 3, generic onSubmit Step 6) |
 | `NoteList({ notes, onDeleteNote, onSelectNote })` | `src/components/NoteList.jsx` | Renders clickable note cards with a Delete button | Step 1 (delete Step 2, click-to-open Step 5) |
 | `NoteModal({ note, onClose, onUpdateNote })` | `src/components/NoteModal.jsx` | Popup modal to view/edit a note (embeds NoteForm) | Step 5 (editing added Step 6) |
-| `handleUpdateNote(id, { title, text })` | `src/App.jsx` | Updates a note's fields + stamps `updatedAt`, closes modal | Step 6 |
+| `handleUpdateNote(id, { title, text, category })` | `src/App.jsx` | Updates a note's fields + stamps `updatedAt`, closes modal | Step 6 (category Step 9) |
 | `formatDate(date)` | `src/utils/date.js` | Formats a date as `Aug 31st 12:30 PM` (shared) | Step 1 (moved to utils Step 5) |
 | `ordinal(n)` | `src/utils/date.js` | Returns the day suffix (`st`/`nd`/`rd`/`th`) | Step 2 (moved to utils Step 5) |
+| `getCategoryColor(value)` | `src/utils/categories.js` | Returns a category's predefined background color | Step 9 |
 | `handleDeleteNote(id)` | `src/App.jsx` | Confirms, then removes a note from state by id | Step 2 |

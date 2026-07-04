@@ -1,13 +1,16 @@
 import { useState, useRef, useEffect } from 'react'
+import { CATEGORIES } from '../utils/categories'
 
 function NoteForm({
   onSubmit,
   initialTitle = '',
   initialText = '',
+  initialCategory = CATEGORIES[0].value,
   submitLabel = 'Add',
 }) {
   const [title, setTitle] = useState(initialTitle)
   const [text, setText] = useState(initialText)
+  const [category, setCategory] = useState(initialCategory)
   const textareaRef = useRef(null)
 
   useEffect(() => {
@@ -25,9 +28,10 @@ function NoteForm({
       return
     }
 
-    onSubmit({ title: title.trim(), text: trimmedText })
+    onSubmit({ title: title.trim(), text: trimmedText, category })
     setTitle('')
     setText('')
+    setCategory(initialCategory)
   }
 
   return (
@@ -46,6 +50,17 @@ function NoteForm({
         onChange={(event) => setText(event.target.value)}
         placeholder="Write a note..."
       />
+      <select
+        className="note-form__category"
+        value={category}
+        onChange={(event) => setCategory(event.target.value)}
+      >
+        {CATEGORIES.map((c) => (
+          <option key={c.value} value={c.value}>
+            {c.label}
+          </option>
+        ))}
+      </select>
       <button type="submit" className="note-form__button">
         {submitLabel}
       </button>

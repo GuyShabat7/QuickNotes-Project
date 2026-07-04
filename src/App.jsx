@@ -1,18 +1,26 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import NoteForm from './components/NoteForm'
 import NoteList from './components/NoteList'
 import NoteModal from './components/NoteModal'
 import './App.css'
 
 function App() {
-  const [notes, setNotes] = useState([])
+  const [notes, setNotes] = useState(() => {
+    const saved = localStorage.getItem('notes')
+    return saved ? JSON.parse(saved) : []
+  })
   const [selectedNote, setSelectedNote] = useState(null)
 
-  const handleAddNote = ({title, text}) => {
+  useEffect(() => {
+    localStorage.setItem('notes', JSON.stringify(notes))
+  }, [notes])
+
+  const handleAddNote = ({ title, text, category }) => {
     const newNote = {
       id: crypto.randomUUID(),
       title,
       text,
+      category,
       createdAt: new Date().toISOString(),
     }
     setNotes((prevNotes) => [newNote, ...prevNotes])
@@ -28,11 +36,17 @@ function App() {
     setNotes((prevNotes) => prevNotes.filter((note) => note.id !== id))
   }
 
-  const handleUpdateNote = (id, { title, text }) => {
+  const handleUpdateNote = (id, { title, text, category }) => {
     setNotes((prevNotes) =>
       prevNotes.map((note) =>
         note.id === id
-          ? { ...note, title, text, updatedAt: new Date().toISOString() }
+          ? {
+              ...note,
+              title,
+              text,
+              category,
+              updatedAt: new Date().toISOString(),
+            }
           : note
       )
     )
