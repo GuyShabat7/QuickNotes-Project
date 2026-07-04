@@ -60,6 +60,55 @@
   background: #186faf;
 }
 
+/* Filters */
+.note-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.note-filters__search {
+  width: 100%;
+  padding: 10px 12px;
+  font: inherit;
+  border: 1px solid #bcccdc;
+  border-radius: 8px;
+}
+
+.note-filters__search:focus {
+  outline: none;
+  border-color: #2680c2;
+  box-shadow: 0 0 0 3px rgba(38, 128, 194, 0.2);
+}
+
+.note-filters__categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.note-filters__button {
+  padding: 6px 14px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: #334e68;
+  background: #ffffff;
+  border: 1px solid #bcccdc;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.note-filters__button:hover {
+  border-color: #2680c2;
+}
+
+.note-filters__button--active {
+  color: #ffffff;
+  background: #2680c2;
+  border-color: #2680c2;
+}
+
 /* Notes grid */
 .note-list {
   display: grid;

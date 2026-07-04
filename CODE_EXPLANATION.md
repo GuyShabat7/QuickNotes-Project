@@ -33,6 +33,8 @@ Updated as new functions are added in each step.
   - [Persisting notes to localStorage](#persisting-notes-to-localstorage)
 - [Step 9](#step-9)
   - [Note categories with colors](#note-categories-with-colors)
+- [Step 10](#step-10)
+  - [Search and category filters](#search-and-category-filters)
 - [Function Index](#function-index)
 
 ---
@@ -1000,6 +1002,97 @@ NoteList reads note.category → getCategoryColor() → inline background color
 
 ---
 
+## Step 10
+
+Adds a **search bar** (filters by title or content) and **category filter buttons**. Both narrow down which notes are shown.
+
+### Search and category filters
+
+#### Filter state (`src/App.jsx`)
+
+```jsx
+const [searchQuery, setSearchQuery] = useState('')
+const [activeCategory, setActiveCategory] = useState('all')
+```
+
+- `searchQuery` — the text typed in the search box.
+- `activeCategory` — which category button is selected; `'all'` means no category filter.
+
+#### Computing the filtered list
+
+```jsx
+const filteredNotes = notes.filter((note) => {
+  const query = searchQuery.trim().toLowerCase()
+  const matchesSearch =
+    (note.title || '').toLowerCase().includes(query) ||
+    note.text.toLowerCase().includes(query)
+  const matchesCategory =
+    activeCategory === 'all' || note.category === activeCategory
+  return matchesSearch && matchesCategory
+})
+```
+
+- This runs on **every render** — it's derived data, not state. No `useState`/`useEffect` needed; whenever `notes`, `searchQuery`, or `activeCategory` changes, React re-renders and this recomputes.
+- **Search:** lowercases both sides for a case-insensitive match, and checks title **or** text with `.includes()`. An empty query makes `.includes('')` always true → all notes pass. `(note.title || '')` guards notes with no title.
+- **Category:** `'all'` passes everything; otherwise only notes whose `category` matches.
+- `matchesSearch && matchesCategory` — both conditions must hold, so the two filters **combine**.
+- **Important:** filtering only affects what's *displayed*. Add/edit/delete still act on the full `notes` array, so persistence and editing are untouched — `NoteList` just receives `filteredNotes` instead of `notes`.
+
+#### `NoteFilters` — the controls (`src/components/NoteFilters.jsx`)
+
+```jsx
+const buttons = [{ value: 'all', label: 'All' }, ...CATEGORIES]
+```
+
+- Builds the button list by putting an **"All"** option in front of the real categories (spread from the same `CATEGORIES` source of truth).
+
+```jsx
+<input
+  type="text"
+  className="note-filters__search"
+  value={searchQuery}
+  onChange={(event) => onSearchChange(event.target.value)}
+  placeholder="Search notes..."
+/>
+```
+
+- A controlled search input; typing calls `onSearchChange`, which updates `searchQuery` in `App`.
+
+```jsx
+{buttons.map((button) => (
+  <button
+    key={button.value}
+    type="button"
+    className={
+      activeCategory === button.value
+        ? 'note-filters__button note-filters__button--active'
+        : 'note-filters__button'
+    }
+    onClick={() => onCategoryChange(button.value)}
+  >
+    {button.label}
+  </button>
+))}
+```
+
+- One button per entry. Clicking sets `activeCategory` (via `onCategoryChange`).
+- **Conditional className** — the selected button gets an extra `--active` class so CSS can highlight it. This is the string-based way to toggle a class in React.
+- `NoteFilters` is **presentational**: it holds no state itself, just receives values + callbacks as props (App owns the state).
+
+Flow:
+
+```
+Type in search / click a category button
+      ▼
+App updates searchQuery / activeCategory
+      ▼
+filteredNotes recomputes on re-render
+      ▼
+NoteList shows only the matching notes
+```
+
+---
+
 ## Function Index
 
 | Function | File | Purpose | Added in |
@@ -1011,6 +1104,7 @@ NoteList reads note.category → getCategoryColor() → inline background color
 | `handleSubmit(event)` | `src/components/NoteForm.jsx` | Validates text, calls `onSubmit({ title, text })`, clears fields | Step 1 (title Step 3, generic onSubmit Step 6) |
 | `NoteList({ notes, onDeleteNote, onSelectNote })` | `src/components/NoteList.jsx` | Renders clickable note cards with a Delete button | Step 1 (delete Step 2, click-to-open Step 5) |
 | `NoteModal({ note, onClose, onUpdateNote })` | `src/components/NoteModal.jsx` | Popup modal to view/edit a note (embeds NoteForm) | Step 5 (editing added Step 6) |
+| `NoteFilters({ searchQuery, onSearchChange, activeCategory, onCategoryChange })` | `src/components/NoteFilters.jsx` | Search box + category filter buttons | Step 10 |
 | `handleUpdateNote(id, { title, text, category })` | `src/App.jsx` | Updates a note's fields + stamps `updatedAt`, closes modal | Step 6 (category Step 9) |
 | `formatDate(date)` | `src/utils/date.js` | Formats a date as `Aug 31st 12:30 PM` (shared) | Step 1 (moved to utils Step 5) |
 | `ordinal(n)` | `src/utils/date.js` | Returns the day suffix (`st`/`nd`/`rd`/`th`) | Step 2 (moved to utils Step 5) |
