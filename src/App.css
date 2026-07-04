@@ -1,0 +1,211 @@
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+.app__title {
+  margin: 0 0 24px;
+  color: #102a43;
+}
+
+/* Two columns: form on the left, notes grid on the right */
+.app__layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+/* Form */
+.note-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: #ffffff;
+  border: 1px solid #d9e2ec;
+  border-radius: 10px;
+}
+
+.note-form__input {
+  width: 100%;
+  resize: none;
+  overflow: hidden;
+  min-height: 90px;
+  padding: 12px;
+  font: inherit;
+  border: 1px solid #bcccdc;
+  border-radius: 8px;
+}
+
+.note-form__input:focus {
+  outline: none;
+  border-color: #2680c2;
+  box-shadow: 0 0 0 3px rgba(38, 128, 194, 0.2);
+}
+
+.note-form__button {
+  padding: 10px 16px;
+  font: inherit;
+  font-weight: 600;
+  color: #ffffff;
+  background: #2680c2;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.note-form__button:hover {
+  background: #186faf;
+}
+
+/* Notes grid */
+.note-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.note-list__empty {
+  color: #829ab1;
+}
+
+.note-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #d9e2ec;
+  border-radius: 10px;
+  min-height: 100px;
+  cursor: pointer;
+}
+
+.note-card__text {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #243b53;
+}
+
+.note-card__date {
+  margin-top: auto;
+  font-size: 0.8rem;
+  color: #829ab1;
+}
+
+.note-card__delete {
+  align-self: flex-start;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 0.8rem;
+  color: #b91c1c;
+  background: transparent;
+  border: 1px solid #f4bcbc;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.note-card__delete:hover {
+  color: #ffffff;
+  background: #d64545;
+  border-color: #d64545;
+}
+
+.note-form__title {
+  width: 100%;
+  padding: 10px 12px;
+  font: inherit;
+  border: 1px solid #bcccdc;
+  border-radius: 8px;
+}
+
+.note-form__title:focus {
+  outline: none;
+  border-color: #2680c2;
+  box-shadow: 0 0 0 3px rgba(38, 128, 194, 0.2);
+}
+
+.note-card__title {
+  margin: 0;
+  font-size: 1rem;
+  color: #102a43;
+}
+
+/* Modal */
+.note-modal__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 42, 67, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1000;
+}
+
+.note-modal {
+  background: #ffffff;
+  border-radius: 12px;
+  max-width: 520px;
+  width: 100%;
+  max-height: 80vh;
+  overflow: auto;
+  padding: 24px;
+  outline: none;
+}
+
+.note-modal__content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.note-modal__title {
+  margin: 0;
+  color: #102a43;
+}
+
+.note-modal__text {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #243b53;
+}
+
+.note-modal__dates {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.note-modal__date {
+  font-size: 0.85rem;
+  color: #829ab1;
+}
+
+.note-card__date--updated {
+  font-style: italic;
+}
+
+.note-modal__close {
+  align-self: flex-end;
+  padding: 8px 16px;
+  font: inherit;
+  font-weight: 600;
+  color: #ffffff;
+  background: #2680c2;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+@media (max-width: 720px) {
+  .app__layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+
